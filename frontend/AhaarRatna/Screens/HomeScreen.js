@@ -31,22 +31,31 @@ export default function HomeScreen() {
       .then((response) => response.json())
       .then((data) => {
         console.log(data,'data')
-        setRecipes(data);
+        setRecipes(Array.isArray(data) ? data : []);
       })
       .catch((error) => console.error('Error fetching recipes:', error))
       .finally(() => setLoading(false));
   };
   
 
-  const filteredRecipes = recipes.filter((recipe) => {
+  const filteredRecipes = Array.isArray(recipes) ? recipes.filter((recipe) => {
+    // Skip filtering if no filter or searchQuery is provided
+    if (!filter && !searchQuery) {
+      return true; // No filter or search query, include all recipes
+    }
+  
+    // If filter is provided, apply the filter
     const matchesFilter = filter ? recipe.diet === filter : true;
+  
+    // If searchQuery is provided, apply the search
     const matchesSearch = searchQuery
       ? recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         recipe.ingredients.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
+  
     return matchesFilter && matchesSearch;
-  });
-
+  }) : []; // Default to an empty array if recipes isn't an array
+  
   const handleRecipePress = (recipe) => {
     navigation.navigate('Recipe', { recipe });
   };
@@ -63,7 +72,7 @@ export default function HomeScreen() {
     <MenuProvider>
       <View style={styles.container}>
         <Image source={require('../assets/logo.png')} style={styles.logo} />
-        <Text style={styles.subtitle}>An App that recommends traditional Indian recipes...</Text>
+        <Text style={styles.subtitle}>Explore the Richness of Traditional Indian Cuisine !!!</Text>
 
         <View style={styles.searchFilterRow}>
           <View style={styles.searchContainer}>
@@ -81,26 +90,31 @@ export default function HomeScreen() {
 
         {loading ? (
           <ActivityIndicator size="large" color="#333" style={{ marginTop: 20 }} />
+        ) : recipes.length === 0 ? (
+          <Text style={styles.notFoundText}>No recipes found.</Text>
         ) : (
           <FlatList
-            data={recipes.filter((recipe) => {
-              const matchesFilter = filter ? recipe.diet === filter : true;
-              const matchesSearch = searchQuery
-                ? recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  recipe.ingredients.toLowerCase().includes(searchQuery.toLowerCase())
-                : true;
-              return matchesFilter && matchesSearch;
-            })}
+            data={filteredRecipes}
             renderItem={renderRecipeItem}
             keyExtractor={(item, index) => `${item.id || index}`}
             numColumns={2}
             contentContainerStyle={styles.recipeList}
           />
         )}
+
       </View>
     </MenuProvider>
   );
 }
+
+// recipes.filter((recipe) => {
+//   const matchesFilter = filter ? recipe.diet === filter : true;
+//   const matchesSearch = searchQuery
+//     ? recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+//       recipe.ingredients.toLowerCase().includes(searchQuery.toLowerCase())
+//     : true;
+//   return matchesFilter && matchesSearch;
+// })}
 
 const styles = StyleSheet.create({
   container: {
